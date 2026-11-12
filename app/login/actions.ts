@@ -27,6 +27,19 @@ export async function sendMagicLink(formData: FormData) {
   redirect("/login?sent=1");
 }
 
+export async function signInWithPassword(formData: FormData) {
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const password = String(formData.get("password") ?? "");
+  if (!isAllowedEmail(email)) redirect("/login?error=password");
+  const supabase = await createClient();
+  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  if (error) {
+    console.error("signInWithPassword failed:", error.code, error.message);
+    redirect(error.status === 429 ? "/login?error=rate" : "/login?error=password");
+  }
+  redirect("/dashboard");
+}
+
 export async function signOut() {
   const supabase = await createClient();
   await supabase.auth.signOut();
