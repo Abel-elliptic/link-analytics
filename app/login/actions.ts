@@ -1,22 +1,23 @@
 "use server";
 
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { isAllowedEmail } from "@/lib/auth";
+import { siteUrl } from "@/lib/site";
 import { createClient } from "@/lib/supabase/server";
 
 export async function sendMagicLink(formData: FormData) {
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
-  const allowed = (process.env.ALLOWED_EMAIL ?? "").trim().toLowerCase();
-  // 管理者以外にはメールを送らない（結果は同じ表示にして存在確認に使われないようにする）
-  if (allowed && email === allowed) {
-    const h = await headers();
-    const origin = process.env.NEXT_PUBLIC_SITE_URL ?? `${h.get("x-forwarded-proto") ?? "https"}://${h.get("host")}`;
+  // 管理者以外にはメールを送らない（表示は同じにして、登録の有無を推測されないようにする）
+  if (isAllowedEmail(email)) {
     const supabase = await createClient();
     const { error } = await supabase.auth.signInWithOtp({
       email,
-      options: { emailRedirectTo: `${origin}/auth/callback` },
+      options: { emailRedirectTo: `${await siteUrl()}/auth/callback`, shouldCreateUser: true },
     });
-    if (error) console.error("signInWithOtp failed", error.message);
+    if (error) {
+      console.error("signInWithOtp failed:", error.code, error.message);
+      redirect(error.status === 429 || /after \d+ seconds/.test(error.message) ? "/login?error=rate" : "/login?error=send");
+    }
   }
   redirect("/login?sent=1");
 }

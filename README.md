@@ -29,6 +29,10 @@
 2. Supabase の Authentication で次の2点を設定します。
    - **Site URL / Redirect URLs** に `https://<name>.vercel.app/auth/callback` を追加
    - 他人の登録を防ぐため、「Allow new users to sign up」を**初回ログインの後で**無効にする
+   - **Emails → Magic Link** テンプレートのリンクを次に変更する（別の端末・アプリでメールを開いてもログインできるようにするため）
+     ```html
+     <a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email">ログインする</a>
+     ```
 3. Vercel にこのリポジトリをインポートし、`.env.example` にある環境変数を設定します（`IP_HASH_SECRET` は `openssl rand -hex 32` などで生成）。
 4. デプロイし、`/login` から `ALLOWED_EMAIL` に設定したアドレスでログインします。
 
