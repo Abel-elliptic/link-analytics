@@ -3,7 +3,9 @@ import { notFound } from "next/navigation";
 import QRCode from "qrcode";
 import { createClient } from "@/lib/supabase/server";
 import { buildDestination, regionLabel, shortUrl, type LinkRow } from "@/lib/links";
+import { requireMember } from "@/lib/members";
 import { siteUrl } from "@/lib/site";
+import Nav from "../Nav";
 
 export const dynamic = "force-dynamic";
 
@@ -39,6 +41,7 @@ function Bars({ title, items, label = (k: string) => k, sort = "n", limit = 15 }
 export default async function LinkDetail({ params, searchParams }: {
   params: Promise<{ slug: string }>; searchParams: Promise<{ days?: string }>;
 }) {
+  const me = await requireMember();
   const { slug } = await params;
   const { days: d } = await searchParams;
   const days = RANGES[(d ?? "30") as keyof typeof RANGES] ?? 30;
@@ -58,6 +61,7 @@ export default async function LinkDetail({ params, searchParams }: {
 
   return (
     <main>
+      <Nav me={me} />
       <p><Link href="/dashboard">← 一覧へ</Link></p>
       <h1>{link.title || link.slug}</h1>
       <div className="card grid-detail">
@@ -102,11 +106,10 @@ export default async function LinkDetail({ params, searchParams }: {
       <section className="card note">
         <h3>年齢・性別（GA4）</h3>
         <p>
-          年齢・性別はクリック時のリクエストに含まれないため、このシステムでは取得していません。
-          遷移先サイトに導入した GA4 で、<b>ユーザー属性レポート</b>を
-          <code>セッションの手動広告コンテンツ（utm_content）= {link.slug}</code> で絞り込むと、このリンク経由の推計値を確認できます。
-          Googleシグナルの有効化が必要で、少数データはしきい値により非表示になります。手順は <code>docs/ga4-setup.md</code> を参照。
+          年齢・性別はクリック時のリクエストに含まれないため、ziplink では取得していません。遷移先サイトに GA4 を導入すると、
+          GA4 の「探索」でディメンション「セッションの手動広告コンテンツ」を <code>{link.slug}</code> に絞り込み、このリンク経由の年齢・性別（集計の推計値）を確認できます。
         </p>
+        <p><Link href={`/dashboard/ga4?slug=${encodeURIComponent(link.slug)}`}>GA4 の連携方法と、このリンクの見方 →</Link></p>
         <p className="sub">位置情報は Vercel が IP アドレスから推定した値です。モバイル回線などでは実際の所在地と異なることがあります。</p>
       </section>
     </main>

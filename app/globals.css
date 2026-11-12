@@ -54,3 +54,15 @@ tr.muted { opacity: .5; }
 .bars .bar { height: 10px; background: var(--accent-soft); border-radius: 5px; overflow: hidden; }
 .bars .bar span { display: block; height: 100%; background: var(--accent); border-radius: 5px; }
 .bars small { color: var(--sub); }
+.nav { margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid var(--line); }
+.nav nav { margin: 0; gap: 16px; }
+.nav nav a { text-decoration: none; font-weight: 600; font-size: .9rem; }
+.nav form { margin: 0; }
+.row.inline { margin: 0; gap: 6px; flex-wrap: wrap; }
+.row.inline input { padding: 4px 8px; font-size: .85rem; width: 11em; }
+select { font: inherit; color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; }
+button.danger { color: var(--err); }
+.okmsg { color: #2e7d32; font-size: .9rem; }
+@media (prefers-color-scheme: dark) { .okmsg { color: #81c784; } }
+pre.code { background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 12px; overflow-x: auto; font-size: .8rem; line-height: 1.5; margin: 0; }
+ol, ul { margin: 0; padding-left: 1.4em; } li { margin: 4px 0; }

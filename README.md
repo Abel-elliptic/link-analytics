@@ -21,17 +21,32 @@
 | `lib/tracking.ts` | UA 解析・ボット判定・位置情報・IP ハッシュ |
 | `lib/links.ts` | スラッグ生成・UTM 付与・都道府県名の変換 |
 | `app/dashboard/*` | 管理画面（リンクの作成・一覧・分析） |
-| `proxy.ts` | `/dashboard` の認証ガード |
+| `proxy.ts` | `/dashboard` の認証ガード（メンバー以外を拒否） |
+| `lib/members.ts` | ロール判定・初期管理者の自動登録 |
+| `app/dashboard/accounts/*` | アカウント管理（管理者のみ） |
+| `app/dashboard/ga4/*` | GA4 連携ガイドとタグ生成 |
 | `supabase/migrations/0001_init.sql` | テーブル・RLS・集計関数 |
+| `supabase/migrations/0002_members.sql` | メンバー・権限と共有 RLS |
+
+## アカウントと権限
+- ログインはメールアドレス＋パスワードのみ（メールのリンクでのログインは廃止）。
+- 環境変数 `ALLOWED_EMAIL` のユーザー＝**初期管理者**。初回ログイン時に自動で管理者として登録され、削除・権限変更はできません。
+- 管理者は「アカウント管理」画面で、アカウントの追加（初期パスワードを指定。確認メールは送らない）、権限の変更、パスワード再設定、削除ができます。
+- 短縮リンクと分析は全メンバーで共有。リンクの削除（DB上）は管理者のみ。
+
+| 権限 | リンク作成・停止・分析 | アカウント管理 |
+| --- | --- | --- |
+| 管理者 | ○ | ○ |
+| メンバー | ○ | × |
 
 ## セットアップ
-1. Supabase でプロジェクトを作り、`supabase/migrations/0001_init.sql` を SQL Editor で実行します。
-2. Supabase の Authentication で次の2点を設定します。
-   - **Site URL / Redirect URLs** に `https://<name>.vercel.app/auth/callback` を追加
-   - 他人の登録を防ぐため、「Allow new users to sign up」を**初回ログインの後で**無効にする
-   - メールテンプレートは既定のままで動きます（ログインリンクは implicit フローで送信し、`/auth/callback` ページで受け取ります）。任意で Magic Link テンプレートを `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email` に変えても動きます。
+1. Supabase でプロジェクトを作り、SQL Editor で `supabase/migrations/0001_init.sql` → `0002_members.sql` の順に実行します。
+2. Supabase の Authentication で次を設定します。
+   - **Users → Add user → Create new user** で初期管理者（`ALLOWED_EMAIL` と同じアドレス）をパスワード付きで作成（Auto Confirm をオン）
+   - **Sign In / Providers** の「Allow new users to sign up」をオフ（アカウントは管理画面から追加するため）
 3. Vercel にこのリポジトリをインポートし、`.env.example` にある環境変数を設定します（`IP_HASH_SECRET` は `openssl rand -hex 32` などで生成）。
-4. デプロイし、`/login` から `ALLOWED_EMAIL` に設定したアドレスでログインします。
+4. デプロイし、`/login` から初期管理者でログインします。
+5. GA4 を使う場合は、管理画面の「GA4連携」ページの手順に従います（[docs/ga4-setup.md](docs/ga4-setup.md) も同内容）。
 
 ## 開発
 ```bash

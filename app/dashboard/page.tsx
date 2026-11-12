@@ -2,13 +2,16 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { shortUrl, type LinkRow } from "@/lib/links";
 import { siteUrl } from "@/lib/site";
-import { signOut } from "../login/actions";
+import { requireMember } from "@/lib/members";
 import { setArchived } from "./actions";
 import CreateForm from "./CreateForm";
+import Nav from "./Nav";
 
 export const dynamic = "force-dynamic";
 
-export default async function Dashboard() {
+export default async function Dashboard({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
+  const me = await requireMember();
+  const { error: pageError } = await searchParams;
   const supabase = await createClient();
   const [{ data: links, error }, { data: counts }] = await Promise.all([
     supabase.from("links").select("*").order("created_at", { ascending: false }).returns<LinkRow[]>(),
@@ -19,12 +22,9 @@ export default async function Dashboard() {
 
   return (
     <main>
-      <header className="row between">
-        <h1>短縮リンク</h1>
-        <form action={signOut}>
-          <button className="ghost">ログアウト</button>
-        </form>
-      </header>
+      <Nav me={me} />
+      <h1>短縮リンク</h1>
+      {pageError === "forbidden" && <p className="error">その画面は管理者のみ利用できます。</p>}
       <CreateForm />
       {error && <p className="error">読み込みに失敗しました: {error.message}</p>}
       <table>

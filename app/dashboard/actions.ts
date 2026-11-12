@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { randomSlug, RESERVED_SLUGS, SLUG_RE } from "@/lib/links";
+import { requireMember } from "@/lib/members";
 
 export type CreateState = { error?: string };
 
@@ -13,6 +14,7 @@ const opt = (v: FormDataEntryValue | null) => {
 };
 
 export async function createLink(_prev: CreateState, formData: FormData): Promise<CreateState> {
+  await requireMember();
   const destination = String(formData.get("destination_url") ?? "").trim();
   try {
     const u = new URL(destination);
@@ -50,6 +52,7 @@ export async function createLink(_prev: CreateState, formData: FormData): Promis
 }
 
 export async function setArchived(formData: FormData) {
+  await requireMember();
   const id = String(formData.get("id"));
   const archived = formData.get("archived") === "true";
   const supabase = await createClient();

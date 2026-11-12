@@ -1,8 +1,8 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-import { isAllowedEmail } from "@/lib/auth";
+import { getRole } from "@/lib/members";
 
-/** /dashboard 配下だけでセッションを更新し、未ログインまたは許可外のアドレスなら /login へ。短縮URLのリダイレクトには関与しない。 */
+/** /dashboard 配下だけでセッションを更新し、未ログインまたはメンバー以外なら /login へ。短縮URLのリダイレクトには関与しない。 */
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
   const supabase = createServerClient(
@@ -20,7 +20,8 @@ export async function proxy(request: NextRequest) {
     },
   );
   const { data } = await supabase.auth.getUser();
-  if (!data.user || !isAllowedEmail(data.user.email)) {
+  const role = data.user ? await getRole(data.user) : null;
+  if (!role) {
     if (data.user) await supabase.auth.signOut();
     const url = request.nextUrl.clone();
     url.pathname = "/login";
