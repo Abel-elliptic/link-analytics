@@ -1,7 +1,8 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { isAllowedEmail } from "@/lib/auth";
 
-/** /dashboard 配下だけでセッションを更新し、未ログインなら /login へ。短縮URLのリダイレクトには関与しない。 */
+/** /dashboard 配下だけでセッションを更新し、未ログインまたは許可外のアドレスなら /login へ。短縮URLのリダイレクトには関与しない。 */
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
   const supabase = createServerClient(
@@ -19,11 +20,15 @@ export async function proxy(request: NextRequest) {
     },
   );
   const { data } = await supabase.auth.getUser();
-  if (!data.user) {
+  if (!data.user || !isAllowedEmail(data.user.email)) {
+    if (data.user) await supabase.auth.signOut();
     const url = request.nextUrl.clone();
     url.pathname = "/login";
-    url.search = "";
-    return NextResponse.redirect(url);
+    url.search = data.user ? "?error=denied" : "";
+    const redirect = NextResponse.redirect(url);
+    // signOut で消した Cookie をリダイレクトにも反映する
+    response.cookies.getAll().forEach((c) => redirect.cookies.set(c));
+    return redirect;
   }
   return response;
 }
