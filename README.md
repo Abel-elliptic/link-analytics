@@ -27,6 +27,8 @@
 | `app/dashboard/ga4/*` | GA4 連携ガイドとタグ生成 |
 | `supabase/migrations/0001_init.sql` | テーブル・RLS・集計関数 |
 | `supabase/migrations/0002_members.sql` | メンバー・権限と共有 RLS |
+| `supabase/migrations/0003_hardening.sql` | 更新可能列の制限・URL長制限・ログイン失敗記録 |
+| `lib/ratelimit.ts` | ログイン総当たり対策（IP・アドレス単位） |
 
 ## アカウントと権限
 - ログインはメールアドレス＋パスワードのみ（メールのリンクでのログインは廃止）。
@@ -40,7 +42,7 @@
 | メンバー | ○ | × |
 
 ## セットアップ
-1. Supabase でプロジェクトを作り、SQL Editor で `supabase/migrations/0001_init.sql` → `0002_members.sql` の順に実行します。
+1. Supabase でプロジェクトを作り、SQL Editor で `supabase/migrations/0001_init.sql` → `0002_members.sql` → `0003_hardening.sql` の順に実行します。
 2. Supabase の Authentication で次を設定します。
    - **Users → Add user → Create new user** で初期管理者（`ALLOWED_EMAIL` と同じアドレス）をパスワード付きで作成（Auto Confirm をオン）
    - **Sign In / Providers** の「Allow new users to sign up」をオフ（アカウントは管理画面から追加するため）

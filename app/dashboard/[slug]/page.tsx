@@ -44,7 +44,9 @@ export default async function LinkDetail({ params, searchParams }: {
   const me = await requireMember();
   const { slug } = await params;
   const { days: d } = await searchParams;
-  const days = RANGES[(d ?? "30") as keyof typeof RANGES] ?? 30;
+  const key = d ?? "30";
+  // Object.hasOwn: "constructor" などのプロトタイプのキーを弾く（弾かないと日付計算が NaN になり 500 エラー）
+  const days: number = Object.hasOwn(RANGES, key) ? RANGES[key as keyof typeof RANGES] : 30;
 
   const supabase = await createClient();
   const { data: link } = await supabase.from("links").select("*").eq("slug", slug).maybeSingle<LinkRow>();

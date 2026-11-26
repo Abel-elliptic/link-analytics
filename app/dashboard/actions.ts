@@ -16,6 +16,7 @@ const opt = (v: FormDataEntryValue | null) => {
 export async function createLink(_prev: CreateState, formData: FormData): Promise<CreateState> {
   await requireMember();
   const destination = String(formData.get("destination_url") ?? "").trim();
+  if (destination.length > 2048) return { error: "遷移先URLは2048文字以内にしてください。" };
   try {
     const u = new URL(destination);
     if (u.protocol !== "https:" && u.protocol !== "http:") throw new Error();

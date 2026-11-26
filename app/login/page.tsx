@@ -2,7 +2,7 @@ import { signInWithPassword } from "./actions";
 
 const ERRORS: Record<string, string> = {
   password: "メールアドレスまたはパスワードが違います。",
-  rate: "ログインの試行回数が多すぎます。しばらく待ってからお試しください。",
+  rate: "ログインの失敗が続いたため、一時的にロックしています。15分ほど待ってからお試しください。",
   denied: "このアカウントには利用権限がありません。管理者に追加を依頼してください。",
 };
 

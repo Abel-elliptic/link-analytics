@@ -8,6 +8,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 export type AccountState = { error?: string; ok?: string };
 
 const MIN_PASSWORD = 8;
+const MAX_PASSWORD = 72; // Supabase(bcrypt) は 72 バイトまでしか使わない
 const asRole = (v: FormDataEntryValue | null): Role => (v === "admin" ? "admin" : "member");
 
 async function adminCount() {
@@ -22,6 +23,7 @@ export async function addAccount(_prev: AccountState, formData: FormData): Promi
   const role = asRole(formData.get("role"));
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return { error: "メールアドレスの形式が正しくありません。" };
   if (password.length < MIN_PASSWORD) return { error: `パスワードは${MIN_PASSWORD}文字以上にしてください。` };
+  if (password.length > MAX_PASSWORD) return { error: `パスワードは${MAX_PASSWORD}文字以内にしてください。` };
 
   const admin = createAdminClient();
   // email_confirm: true → 確認メールを送らずに有効化（メール送信上限の影響を受けない）
@@ -41,11 +43,16 @@ export async function addAccount(_prev: AccountState, formData: FormData): Promi
 }
 
 export async function resetPassword(_prev: AccountState, formData: FormData): Promise<AccountState> {
-  await requireAdmin();
+  const me = await requireAdmin();
   const userId = String(formData.get("user_id"));
   const password = String(formData.get("password") ?? "");
   if (password.length < MIN_PASSWORD) return { error: `パスワードは${MIN_PASSWORD}文字以上にしてください。` };
-  const { error } = await createAdminClient().auth.admin.updateUserById(userId, { password });
+  const admin = createAdminClient();
+  const { data: target } = await admin.from("members").select("email").eq("user_id", userId).maybeSingle();
+  if (!target) return { error: "対象のアカウントが見つかりません。" };
+  // 初期管理者のパスワードは本人だけが変更できる（他の管理者による乗っ取りを防ぐ）
+  if (isBootstrapAdmin(target.email) && userId !== me.userId) return { error: "初期管理者のパスワードは本人しか変更できません。" };
+  const { error } = await admin.auth.admin.updateUserById(userId, { password });
   if (error) return { error: `変更に失敗しました: ${error.message}` };
   return { ok: "パスワードを変更しました。" };
 }
